@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TaxTime - Dashboard Pro</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = { darkMode: 'class' }
+    </script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="css/style.css">
+    
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.1.3/firebase-firestore-compat.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
+</head>
+<body class="bg-[#F4F7FE] dark:bg-slate-900 text-slate-700 dark:text-slate-300 font-sans h-screen flex overflow-hidden transition-colors duration-300">
+    <div id="loginScreen" class="fixed inset-0 z-[9999] bg-[#F4F7FE] dark:bg-slate-900 flex flex-col items-center justify-center w-full h-full transition-colors duration-300">
+        <div class="bg-white dark:bg-slate-800 p-10 rounded-2xl shadow-xl border border-slate-100 dark:border-slate-700 text-center max-w-sm w-full">
+            <div class="w-16 h-16 bg-indigo-100 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 rounded-2xl flex items-center justify-center mx-auto mb-4 text-3xl">
+                <i class="fa-solid fa-stopwatch"></i>
+            </div>
+            <h1 class="text-3xl font-black text-slate-800 dark:text-white mb-2">TaxTime</h1>
+            <p class="text-slate-500 dark:text-slate-400 mb-8 text-sm">Tu tiempo, tus reglas, tus honorarios.</p>
+            <button onclick="loginConGoogle()" class="w-full flex items-center justify-center gap-3 bg-white dark:bg-slate-700 border border-slate-200 dark:border-slate-600 text-slate-700 dark:text-white font-bold py-3 px-4 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-600 transition shadow-sm">
+                <img src="https://www.svgrepo.com/show/475656/google-color.svg" class="w-5 h-5" alt="Google">
+                Ingresar
+            </button>
+        </div>
+    </div>
+
+    <aside class="w-64 bg-white dark:bg-slate-800 border-r border-slate-200 dark:border-slate-700 flex flex-col justify-between hidden md:flex transition-colors duration-300">
+        <div>
+            <div onclick="triggerAdmin()" class="h-20 flex items-center px-8 border-b border-slate-100 dark:border-slate-700 cursor-pointer hover:bg-slate-50 dark:hover:bg-slate-700 transition" title="Clic 5 veces para Super Admin">
+                <i class="fa-solid fa-stopwatch text-indigo-600 dark:text-indigo-400 text-2xl mr-3"></i>
+                <h1 class="text-2xl font-black text-slate-800 dark:text-white">TaxTime</h1>
+            </div>
+            <nav class="p-4 space-y-2">
+                <button onclick="cambiarVista('dashboard')" id="btn-dashboard" class="menu-btn w-full flex items-center gap-3 px-4 py-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-600 dark:text-indigo-400 rounded-xl font-semibold transition text-left">
+                    <i class="fa-solid fa-chart-pie w-5"></i> Dashboard
+                </button>
+                <button onclick="cambiarVista('informes')" id="btn-informes" class="menu-btn w-full flex items-center gap-3 px-4 py-3 text-slate-500 dark:text-slate-400 hover:bg-slate-50 dark:hover:bg-slate-700/50 rounded-xl font-semibold transition text-left">
+                    <i class="fa-solid fa-chart-column w-5"></i> Informes
+                </button>
+            </nav>
+        </div>
+        <div class="p-4 border-t border-slate-100 dark:border-slate-700">
+            <div class="flex items-center gap-3 px-4 mb-4">
+                <div id="userAvatar" class="w-10 h-10 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-white flex items-center justify-center font-bold">U</div>
+                <div>
+                    <p class="text-sm font-bold text-slate-800 dark:text-white" id="userRoleText">Usuario</p>
+                    <p class="text-[10px] text-emerald-500 font-bold">● Online</p>
+                </div>
+            </div>
+            <button onclick="cerrarSesion()" class="w-full flex items-center justify-center gap-2 text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 py-2 rounded-lg text-sm font-bold transition">
+                <i class="fa-solid fa-arrow-right-from-bracket"></i> Salir
+            </button>
+        </div>
+    </aside>
+
+    <main class="flex-1 flex flex-col h-full overflow-hidden">
+        <header class="h-20 bg-white/80 dark:bg-slate-800/80 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 flex items-center justify-between px-8 z-10 transition-colors duration-300">
+            <h2 id="titulo-vista" class="text-xl font-bold text-slate-800 dark:text-white">Resumen de Actividad</h2>
+            <div class="flex items-center gap-3">
+                <div onclick="editarValorGlobal()" class="cursor-pointer flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/40 px-4 py-2 rounded-lg border border-indigo-100 dark:border-indigo-800 transition hover:bg-indigo-100 dark:hover:bg-indigo-800/60" title="Click para editar valor por hora">
+                    <i class="fa-solid fa-coins text-indigo-500 dark:text-indigo-400"></i>
+                    <div>
+                        <span class="block text-[10px] font-bold text-indigo-400 dark:text-indigo-300 uppercase leading-none">Valor Hora</span>
+                        <span class="text-sm font-black text-indigo-600 dark:text-indigo-400">$<span id="headerValorHora">0</span></span>
+                    </div>
+                </div>
+                <div class="bg-orange-50 dark:bg-orange-900/30 px-4 py-2 rounded-lg border border-orange-100 dark:border-orange-800">
+                    <span class="block text-[10px] font-bold text-orange-400 uppercase leading-none">Retención 2026</span>
+                    <span class="text-sm font-black text-orange-600 dark:text-orange-400">15.25%</span>
+                </div>
+            </div>
+        </header>
+
+        <div id="vista-dashboard" class="flex-1 overflow-y-auto p-8 block">
+            
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mb-8 flex flex-col xl:flex-row justify-between items-center gap-4 transition-colors duration-300">
+                <div>
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white"><i class="fa-solid fa-bolt text-yellow-500 mr-2"></i> Acceso Rápido</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400">Registra tu jornada de hoy fácilmente.</p>
+                </div>
+                <div class="flex flex-wrap gap-3">
+                    <button onclick="marcarEntradaRapida()" class="bg-emerald-500 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-emerald-600 shadow-lg shadow-emerald-200 dark:shadow-none transition flex items-center gap-2">
+                        <i class="fa-solid fa-play"></i> Entrada
+                    </button>
+                    <button onclick="marcarSalidaRapida()" class="bg-red-500 text-white font-bold py-2.5 px-5 rounded-xl hover:bg-red-600 shadow-lg shadow-red-200 dark:shadow-none transition flex items-center gap-2">
+                        <i class="fa-solid fa-stop"></i> Salida
+                    </button>
+                    <div class="w-px bg-slate-200 dark:bg-slate-600 mx-1 hidden sm:block"></div>
+                    <button onclick="abrirIngresoManualRapido()" class="bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-300 font-bold py-2.5 px-5 rounded-xl hover:bg-indigo-100 dark:hover:bg-indigo-800 transition flex items-center gap-2 border border-indigo-100 dark:border-indigo-700">
+                        <i class="fa-solid fa-keyboard"></i> Ingreso Manual
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+                <div class="stat-card bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">Bruto Mes</p><p id="statBruto" class="text-2xl font-black text-slate-800 dark:text-white">$0</p></div>
+                <div class="stat-card bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700 border-b-4 border-b-emerald-400 dark:border-b-emerald-500"><p class="text-xs font-bold text-slate-400 uppercase">Líquido Mes</p><p id="statLiquido" class="text-2xl font-black text-emerald-600 dark:text-emerald-400">$0</p></div>
+                <div class="stat-card bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">Horas Mes</p><p id="statHoras" class="text-2xl font-black text-slate-800 dark:text-white">0h 0m</p></div>
+                <div class="stat-card bg-white dark:bg-slate-800 border border-slate-100 dark:border-slate-700"><p class="text-xs font-bold text-slate-400 uppercase">Turnos Activos</p><p id="statActivos" class="text-2xl font-black text-indigo-600 dark:text-indigo-400">0</p></div>
+            </div>
+
+            <div class="grid grid-cols-1 xl:grid-cols-3 gap-8">
+                <div class="xl:col-span-1 hidden" id="panelAdmin">
+                    <div class="bg-slate-800 dark:bg-slate-900/50 p-6 rounded-2xl shadow-sm border border-slate-700 dark:border-indigo-500/30 text-white relative h-full">
+                        <button onclick="cancelarEdicion()" class="absolute top-6 right-6 text-slate-400 hover:text-white transition" title="Nuevo Registro"><i class="fa-solid fa-plus"></i></button>
+                        
+                        <h3 class="text-lg font-bold mb-4 text-indigo-400" id="formTitulo"><i class="fa-solid fa-user-shield mr-2"></i> Super Admin</h3>
+                        <form id="registroForm" class="space-y-4">
+                            <input type="hidden" id="editandoId" value="">
+                            
+                            <div><label class="block text-xs font-bold text-slate-400 uppercase mb-2">Fecha del Turno</label><input type="date" id="fechaManual" required class="custom-input"></div>
+
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase mb-2">Actividad</label>
+                                <select id="tipo" class="custom-input">
+                                    <option value="informatica">💻 Informática (Boleta 15.25%)</option>
+                                    <option value="uber">🚗 Uber / Efectivo</option>
+                                </select>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="block text-xs font-bold text-slate-400 uppercase mb-2">Entrada</label><input type="time" id="entrada" required class="custom-input"></div>
+                                <div><label class="block text-xs font-bold text-slate-400 uppercase mb-2">Salida</label><input type="time" id="salida" class="custom-input"></div>
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="block text-xs font-bold text-slate-400 uppercase mb-2">Colación (Min)</label><input type="number" id="colacion" value="60" class="custom-input"></div>
+                                <div><label class="block text-xs font-bold text-slate-400 uppercase mb-2">Valor Hora ($)</label><input type="number" id="valor" required class="custom-input"></div>
+                            </div>
+                            <div class="flex gap-2 pt-2">
+                                <button type="button" id="btnCancelarEdit" onclick="cancelarEdicion()" class="hidden w-1/3 bg-slate-600 text-white font-bold py-3 rounded-xl hover:bg-slate-500 transition">Cancelar</button>
+                                <button type="submit" id="btnGuardar" class="w-full bg-indigo-500 text-white font-bold py-3 rounded-xl hover:bg-indigo-400 transition shadow-lg">
+                                    Guardar Registro
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+
+                <div class="xl:col-span-3 transition-all duration-300" id="contenedorTabla">
+                    <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 h-full flex flex-col transition-colors duration-300">
+                        <div class="p-6 border-b border-slate-100 dark:border-slate-700 flex justify-between items-center">
+                            <h3 class="text-lg font-bold text-slate-800 dark:text-white">Historial</h3>
+                            <button onclick="exportarExcel()" class="text-sm font-semibold text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-4 py-2 rounded-lg hover:bg-emerald-100 dark:hover:bg-emerald-800/50 transition flex items-center gap-2 border border-transparent dark:border-emerald-800">
+                                <i class="fa-solid fa-file-excel"></i> Exportar
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto flex-1 p-4">
+                            <table class="w-full text-left">
+                                <thead class="bg-slate-50 dark:bg-slate-900/50 text-slate-400 dark:text-slate-500 text-xs font-bold uppercase">
+                                    <tr>
+                                        <th class="p-3">Fecha</th>
+                                        <th class="p-3">Horario</th>
+                                        <th class="p-3">Neto</th>
+                                        <th class="p-3">Líquido</th>
+                                        <th class="p-3 text-center admin-only hidden">Admin</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="tablaRegistros" class="divide-y divide-slate-100 dark:divide-slate-700 text-sm"></tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="vista-informes" class="hidden flex-1 overflow-y-auto p-8">
+            <div class="bg-white dark:bg-slate-800 p-6 rounded-2xl shadow-sm border border-slate-100 dark:border-slate-700 mb-8 transition-colors duration-300">
+                <div class="flex justify-between items-center mb-6">
+                    <h3 class="text-lg font-bold text-slate-800 dark:text-white">Gráfico de Ingresos</h3>
+                    <select id="filtroGrafico" onchange="actualizarGrafico(turnosGlobales)" class="custom-input w-48 py-1 px-3 text-sm">
+                        <option value="mensual">Por Mes</option>
+                        <option value="diario">Últimos 7 días</option>
+                    </select>
+                </div>
+                <div class="w-full h-[400px]">
+                    <canvas id="graficoMeses"></canvas>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <div id="customModal" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 hidden flex items-center justify-center p-4 opacity-0 transition-opacity duration-300">
+        <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl max-w-sm w-full overflow-hidden transform scale-95 transition-transform duration-300" id="modalContentBox">
+            <div class="p-6">
+                <div id="modalIcon" class="w-12 h-12 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl mb-4">
+                    <i class="fa-solid fa-circle-info"></i>
+                </div>
+                <h3 id="modalTitle" class="text-lg font-black text-slate-800 dark:text-white mb-2">Título</h3>
+                <p id="modalMessage" class="text-slate-500 dark:text-slate-300 text-sm mb-4">Mensaje</p>
+                
+                <input type="text" id="modalInput" class="hidden custom-input w-full mb-4" placeholder="Escribe aquí...">
+                
+                <div id="modalDoubleInput" class="hidden grid grid-cols-2 gap-3 mb-4">
+                    <div><label class="text-xs font-bold text-slate-500 dark:text-slate-400">Entrada</label><input type="time" id="modalTimeIn" class="custom-input"></div>
+                    <div><label class="text-xs font-bold text-slate-500 dark:text-slate-400">Salida</label><input type="time" id="modalTimeOut" class="custom-input"></div>
+                </div>
+            </div>
+            <div class="bg-slate-50 dark:bg-slate-900/50 p-4 flex justify-end gap-3 border-t border-slate-100 dark:border-slate-700">
+                <button id="modalBtnCancel" class="px-4 py-2 text-slate-500 dark:text-slate-400 font-bold hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition hidden">Cancelar</button>
+                <button id="modalBtnConfirm" class="px-6 py-2 bg-indigo-600 text-white font-bold hover:bg-indigo-700 rounded-lg transition shadow-md">Aceptar</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/firebase-config.js"></script>
+    <script src="js/db.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/export.js"></script>
+    <script src="js/ui.js"></script>
+</body>
+</html>

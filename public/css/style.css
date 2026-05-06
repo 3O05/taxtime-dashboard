@@ -1,0 +1,62 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;900&display=swap');
+
+body {
+    font-family: 'Inter', sans-serif;
+}
+
+/* Inputs adaptables a Modo Claro / Oscuro */
+.custom-input {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    background-color: #F8FAFC;
+    border: 1px solid #E2E8F0;
+    border-radius: 0.75rem;
+    font-weight: 500;
+    color: #334155;
+    transition: all 0.2s ease-in-out;
+}
+
+.dark .custom-input {
+    background-color: #334155; /* slate-700 */
+    border-color: #475569; /* slate-600 */
+    color: #F8FAFC; /* slate-50 */
+}
+
+.custom-input:focus {
+    outline: none;
+    border-color: #6366F1;
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+    background-color: #FFFFFF;
+}
+
+.dark .custom-input:focus {
+    background-color: #1E293B; /* slate-800 */
+    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.2);
+}
+
+.stat-card {
+    padding: 1.5rem;
+    border-radius: 1rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.02);
+    transition: transform 0.2s;
+}
+
+.stat-card:hover {
+    transform: translateY(-2px);
+}
+
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: #CBD5E1; border-radius: 10px; }
+::-webkit-scrollbar-thumb:hover { background: #94A3B8; }
+.dark ::-webkit-scrollbar-thumb { background: #475569; }
+
+/* Forzar que el reloj circular flote por encima del modal */
+.mdtp__wrapper {
+    z-index: 999999 !important;
+}
+
+/* Ajustes finos para que el reloj no se bloquee */
+.mdtimepicker {
+    pointer-events: auto !important;
+}
